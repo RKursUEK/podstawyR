@@ -1,2 +1,2 @@
 # podstawyR
-Materiały do kursu "Podstawy języka R"
+Repozytorium zawiera materiały do kursu "Podstawy języka R"
