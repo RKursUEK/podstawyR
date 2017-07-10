@@ -1,0 +1,156 @@
+\documentclass[11pt]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+%\usepackage{mathtools}
+\usepackage{amsmath}
+%\usepackage[T1]{fontenc}
+%\usepackage{times}
+%\usepackage{courier}
+\usepackage{enumerate}
+
+\title{PROGRAMOWANIE LINIOWE -- SZKIC ROZWIĄZANIA ZADANIA}
+\author{Tu proszę podać imiona i nazwiska autorów}
+
+\begin{document}
+
+\maketitle
+
+<<laduj,include=FALSE>>=
+source("http://wizard.uek.krakow.pl/~s701dok/mo/pl_geom.r")
+@
+
+<<okr,eval=TRUE,echo=TRUE,comment=NA,tidy=TRUE>>=
+#Określenie parametrów zadania prymalnego
+A<-matrix(c(3,3,1,2,4,5),ncol=2)
+b<-matrix(c(7,8,8))
+c<-c(3,5)
+@
+
+
+\begin{equation*} \max_{(x_1,x_2) \in D} Z= \Sexpr{c[1]}x_1+\Sexpr{c[2]}x_2\end{equation*}\\
+pod warunkiem
+\begin{eqnarray*}
+D=\{(x_1,x_2) \in \mathbf{R}^2: \\ 
+\Sexpr{A[1,1]}x_1+\Sexpr{A[1,2]}x_2 &  \le & \Sexpr{b[1]}    \\
+\Sexpr{A[2,1]}x_1+\Sexpr{A[2,2]}x_2 &\le & \Sexpr{b[2]}   \\
+\Sexpr{A[3,1]}x_1+\Sexpr{A[3,2]}x_2 & \le & \Sexpr{b[3]}    \\
+x_1 \ge 0, x_2 \ge 0 & &\} \\
+\end{eqnarray*}
+
+\begin{center}\textbf{Rozwiązanie metodą geometryczną}\end{center}
+
+<<it,eval=TRUE,echo=TRUE,tidy=TRUE>>=
+#Górna granica liczby iteracji
+n<-dim(A)[2]
+m<-dim(A)[1]
+it<-choose(m+n,n)
+@
+
+Górna granica liczby iteracji wynosi \Sexpr{it}.
+
+
+
+<<geom,eval=TRUE,echo=TRUE,fig=TRUE,comment=NA,tidy=TRUE>>=
+#Metoda geometryczna - rozwiązanie zadania prymalnego
+optg<-maxgeom(A,b,c)
+@
+
+Rozwiązanie optymalne $x_1^\ast,x_2^\ast,Z^\ast$ zadania prymalnego (maksymalizacji) przedstawia się następująco:
+<<optg,eval=TRUE,echo=FALSE,comment=NA,tidy=TRUE>>=
+optg$rank[1,]
+@
+
+Zadanie dualne - minimalizacja:
+\begin{equation*} \min_{(y_1,y_2,y_3) \in D'} K= \Sexpr{b[1]}y_1+\Sexpr{b[2]}y_2+\Sexpr{b[3]}y_3\end{equation*}\\
+pod warunkiem
+\begin{eqnarray*}
+D'=\{(y_1,y_2,y_3) \in \mathbf{R}^3: \\ 
+\Sexpr{A[1,1]}y_1+\Sexpr{A[2,1]}y_2+\Sexpr{A[3,1]}y_3 &  \ge & \Sexpr{c[1]}    \\
+\Sexpr{A[1,2]}y_1+\Sexpr{A[2,2]}y_2+\Sexpr{A[3,2]}y_3 &\ge & \Sexpr{c[2]}   \\
+y_1 \ge 0, y_2 \ge 0, y_3 \ge 0 & &\} \\
+\end{eqnarray*} 
+
+Wykorzystanie optymalnego rozwiązania zadania prymalnego metodą geometryczną oraz twierdzeń o dualności w celu rozwiązania zadania dualnego:
+
+Funkcyjne warunki ograniczające 2 i 3 dla optymalnego rozwiązania przybierają postać równań, natomiast dla tegoż rozwiązania warunek 1 przyjmuje formę ostrej nierówności.
+Tak więc w oparciu o twierdzenia o dualności mamy:
+Dla zadania dualnego $y_1^\ast=0$, $y_2^\ast>0$ $y_3^\ast>0$.
+
+Ponadto jako, że obie zmienne decyzjne dla optymalnego rozwiązania zadania prymalnego przyjmują wartości dodatnie $x_1^\ast=\Sexpr{optg$rank[1,1]}, x_2^\ast=\Sexpr{optg$rank[1,2]}$, na podstawie twierdzeń można stwierdzić, że w zadaniu dualnym dla rozwiązania optymalnego oba funkcyjne warunki ograniczające przybierają postać równości. 
+
+<<dualgeom,eval=TRUE,echo=TRUE,comment=NA,tidy=TRUE>>=
+
+#Zadanie dualne - rozwiązanie z wykorzystaniem twierdzeń o dualności 
+#rozwiązanie optymalne zadania dualnego
+dual<-rbind(0,solve(t(A)[,-1],matrix(c)))
+optmin<-t(b)%*%dual
+rozwdual<-c(dual,optmin)
+names(rozwdual)<-c("y1","y2","y3","K")
+@
+
+Zgodnie z powyższymi ustaleniami wartości zmiennych dualnej dla rozwiązania optymalnego są następujące: $y_1^\ast$ wynosi 0, a wartości zmiennych $y_2^\ast$, $y_3^\ast$ otrzymujemy jako rozwiązanie układu równań:
+\begin{eqnarray*}
+\Sexpr{A[2,1]}y_2^\ast+\Sexpr{A[3,1]}y_3^\ast &  = & \Sexpr{c[1]}    \\
+\Sexpr{A[2,2]}y_2^\ast+\Sexpr{A[3,2]}y_3^\ast & = & \Sexpr{c[2]}   \\
+\end{eqnarray*} 
+
+Optymalne rozwiązanie dualne dane jest następująco:
+<<<<dualrozw,eval=TRUE,echo=FALSE,comment=NA,tidy=TRUE>>=
+rozwdual
+@
+
+Rozwiązaniem zadania dualnego $y_1^\ast=\Sexpr{dual[1]},y_2^\ast=\Sexpr{dual[2]},y_3^\ast=\Sexpr{dual[3]}$ są ceny dualne surowców.
+
+Interpretacja cen dualnych: $\ldots$\\
+Jak widać wartości funkcji celu dla rozwiązań optymalnych są równe dla zadania prymalnego i zadania dualnego: $Z^\ast=K^\ast=\Sexpr{rozwdual[4]}$
+
+\begin{center}\textbf{Rozwiązanie metodą simpleks}\end{center}
+
+<<simpleks,eval=TRUE,echo=TRUE,comment=NA,tidy=TRUE>>=
+#Metoda simpleks - rozwiązanie zadania prymalnego
+if(!require(lpSolve)) install.packages("lpSolve")
+library(lpSolve)
+
+choose(m+n,m)
+
+zn<-rep("<=",3)
+optsim<-lp("max",c,A,zn,t(b),compute.sens=1)
+optsim$solution
+optsim$objval 
+optsimdual<-optsim$duals
+#zerowy wiersz tablicy simpleks dla rozwiązania #optymalnego
+names(optsimdual)<-c("s1","s2","s3","x1","x2")
+optsimdual
+@
+
+Zerowy wiersz w tablicy simpleks dla rozwiązania optymalnego zadania prymalnego, zawiera w komórkach odpowiadających zmiennym swobodnym tzn. $s_1^\ast, s_2^\ast,s_3^\ast$ rozwiązanie zadania dualnego:$s_1^\ast=y_1^\ast=\Sexpr{optsimdual[1]}, s_2^\ast=y_2^\ast=\Sexpr{optsimdual[2]}, s_3^\ast=y_3^\ast=\Sexpr{optsimdual[3]}$, które określa ceny dualne poszczególnych surowców.\\
+
+Funkcja \textit{lp} z pakietu \textit{lpSolve} umożliwiająca rozwiązania zadania PL metodą simpleks zwraca następujące elementy:
+<<zwraca,eval=TRUE,echo=TRUE,comment=NA,tidy=TRUE>>=
+names(optsim)
+@
+
+Rozważmy zwracane elementy pod kątem uzyskania wyników analizy wrażliwości - analizy przedziałowej \ldots
+
+
+% \begin{center}\textbf{DLA CHĘTNYCH -- szkic rozwiązania zadania PL metodą simpleks w PYTHONIE}\end{center}
+% 
+% Można skorzystać z funkcji \textit{linprog} w pakiecie \textit{scipy.optimize}. W procedurze domyślnie funkcja celu podlega minimlaizacji, w celu wykonania maksymalizacji wystarczy przemnożyć wektor parametrów funkcji celu $c$ przez $-1$. Stąd też wartość funkcji celu dla rozwiązania optymalnego podawana jest z przeciwnym znakiem.
+% <<pylin,engine='python',echo=TRUE,eval=TRUE>>=
+% A = [[3,2], [3,4], [1,5]]
+% b = [7, 8, 8]
+% c = [-3,-5]
+% 
+% # Warunki na nieujemność zmiennych decyzyjnych x1, x2 >= 0
+% x1_bounds = (0, None)
+% x2_bounds = (0, None)
+% 
+% # Importowanie funkcji linprog z pakietu scipy.optimize
+% from scipy.optimize import linprog
+% 
+% res = linprog(c, A_ub=A, b_ub=b, bounds=(x1_bounds, x2_bounds),
+%                options={"disp": True})
+% print(res)
+% @
+
+\end{document}
