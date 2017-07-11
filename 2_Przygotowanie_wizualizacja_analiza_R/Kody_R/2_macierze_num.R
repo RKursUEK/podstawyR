@@ -190,7 +190,7 @@ plot(z1, pch = 16, main = "P³aszczyzna zespolona")
 
 # Pierwiastki wielomianu
 
-# Pakiet polynom umo¿liwia obliczenia symboliczne na wielomianach
+# Pakiet polynom umo¿liwia dzia³ania na wielomianach
 if(!require(polynom)) install.packages("polynom")
 library(polynom)
 # w(x) = 4 + 3*x + 2*x^2 + 1*x^3 
@@ -216,11 +216,11 @@ polyroot(4:1)
 wielfun <- as.function(wiel)
 wielfun(c(0, 10, 20))  # Wartoœci wielomianu dla x = 0, 10, 20 
 
-deriv(wiel)      # Wyznaczanie za pomoc¹ obliczeñ symbolicznych pochodnej wielomianu
-integral(wiel)   # Domyœlne granice ca³kowania to 0 i x
-integral(wiel, limits = c(0, 7))
-## Wyznaczanie postaci wielomianu w oparciu o jego pierwiastki
-poly.calc(pierw)
+deriv(wiel)               # Wyznaczanie za pomoc¹ obliczeñ symbolicznych pochodnej wielomianu
+polynom::integral(wiel)   # Domyœlne granice ca³kowania to 0 i x
+polynom::integral(wiel, limits = c(0, 7))
+## Wyznaczanie postaæ wielomianu w oparciu o jego pierwiastki
+polynom::poly.calc(pierw)
 
 
 # Wektory tekstowe
@@ -260,7 +260,12 @@ any(vl); all(vl)
 
 ### Macierze ###
 
-# Wykorzystywane s¹ procedury z bibliotek BLAS, LAPACK, LINPSCK, MLPACK
+# Dzia³ania na macierzach realizowane s¹ w R przez funkcje biblioteki BLAS (Basic Linear Algebra Subprograms) Fortrana:
+# poziom 1 - operacje wektor * wektor, poziom 2 - operacje macierz * wektor, poziom 3 - operacje macierz * macierz
+
+# Funkcje biblioteki BLAS wykorzystuj¹ funkcje biblioteki LAPACK, implementuj¹cej procedury numeryczne 
+# algebry liniowej (m.in. dekompozycje macierzy)
+
 
 (B <- matrix(1:25, ncol = 5))
 args(matrix)
@@ -347,7 +352,7 @@ library(matrixcalc)
 
 (Ainv <- solve(A))
 
-# Dekompozycja QR macierzy (procedura dqrdc2 z biblioteki LAPACK, wykorzystuj¹ca refleksjê Householdera)
+# Dekompozycja QR macierzy (procedura dqrdc2 z biblioteki LINPACK albo LAPACK, wykorzystuj¹ca refleksjê Householdera)
 (QR <- qr(A))
 QR$rank
 qr.Q(QR) # Wydobycie macierzy Q
@@ -355,7 +360,7 @@ qr.R(QR) # Wydobycie macierzy R
 qr.X(QR)
 
 (S <- crossprod(matrix(rnorm(25), ncol = 5))) # Macierz symetryczna, dodatnio okreœlona
-# Dekompozycja Choleskiego
+# Dekompozycja Choleskiego (funkcja chol wykorzystuje procedury biblioteki LAPACK: DPOTRF oraz DPSTRF)
 (L <- chol(S))
 
 # Macierz odwrotna
@@ -375,9 +380,9 @@ det(A)    # wyznacznik niezerowy, st¹d wiadomo, ¿e rz¹d r(A) = n = 5
 (b <- matrix(9:5))
 
 # W celu rozwi¹zanie kwadratowego uk³adu równañ liniowych stosuje siê funkcjê solve, która wywo³uje procedurê biblioteki LAPACK: 
-# - DGESV - rzeczywiste macierze parametrów uk³adu (A, b)
+# - DGESV - rzeczywiste macierze parametrów uk³adu (A, b) 
 # - ZGESV - zespolone macierze parametrów uk³adów (A, b)
-# Procedury te wykorzystuj¹ dekompozycjê LU macierzy A, w celu wyznaczenia rozwi¹zania uk³adu
+# Procedury te wykorzystuj¹ dekompozycjê LU macierzy A, w celu wyznaczenia rozwi¹zania uk³adu A * x = b <=> LU * x = b
 (xast <- solve(A, b))
 
 # "Prostok¹tne" uk³ady równañ liniowych - rozwi¹zanie (z wykorzystaniem dekompozycji QR macierzy parametrów)
@@ -424,8 +429,7 @@ set.seed(5678)
 # - DSYEVR /dla rzeczywistej macierzy symetrycznej/, 
 # - DGEEV /dla rzeczywistej macierzy niesymetrycznej/, 
 # - ZHEEV /dla zespolonej macierzy hermitowskiej/
-# - ZGEEV /dla zespolonej macierzy niesymetrycznej/ )
-# Wspó³czynniki wielomianu charakterystycznego dla zadania w³asnego wyznaczane s¹ za pomoc¹ algorytmu Faddiejewa–LeVerriera  
+# - ZGEEV /dla zespolonej macierzy niehermitowskiej/ )
 
 eigen(M, symmetric = FALSE)
 
@@ -482,22 +486,58 @@ norm(M, type = "2")     # norma spektralna ||X||_2, odpowiada najwiêkszej wartoœ
 norm(M, type = "F")     # norma Frobeniusa (odpowiada normie L2 zwektoryzowanej macierzy)
 norm(M, type = "M")     # norma maksimum max i,j |x_ij| odpowiada normie L1 zwektoryzowanej macierzy)
 
-# Alternatywnie pakiet matrixcalc 
+# Alternatywnie pakiet matrixcalc:
 entrywise.norm(M, p = 1)
 frobenius.norm(M)
 spectral.norm(M)
 
+# Implementacja popularnych metod numerycznych - pakiet pracma (Practical Numerical Math Functions)
+library(pracma)
+help(package = "pracma")
+
+# charpoly - funkcja wyznaczaj¹ca parametry wielomianu charakterystycznego dla macierzy A
+# Wspó³czynniki wielomianu charakterystycznego dla zadania w³asnego wyznaczane s¹ za 
+# pomoc¹ algorytmu Faddiejewa–LeVerriera  
+charpoly(M)
+
+# bisect metoda bisekcji - poszukiwani rzeczywistych pierwiastków funkcji ci¹g³ej jednej zmiennej, 
+# w zadanym przedziale wartoœci zmiennej [a,b]
+
+# Przybli¿enie wartoœci pierwiastka
+fwielom <- function(x, p = 2, k = 5) x^p - k
+# x \in [0,5], takie, ¿e x^2-5 = 0, daje przybli¿enie numeryczne wartoœci pierwiastka z 5
+bisect(fwielom, a = 0, b = 5, maxiter = 100, tol = NA)
 
 #######################################################################################################
 #######################################################################################################
 #######################################################################################################
 
-# Ró¿niczkowanie symboliczne
+# Ró¿niczkowanie symboliczne w R
+# Wyra¿enia matematyczne reprezentowane za pomcoc¹ drzew sk³adniowych
+# Automatic differentiation (ró¿niczkowanie automatyczne, czasami te¿ nazywane ró¿niczkowanie algorytmiczne):
+# wykorystuje regu³ê ³añcuchow¹ ró¿biczkowania funkcji z³o¿onych:
+# wariant forward - w ramach regu³y ³añcuchowej ró¿niczkowania, procedura "przebiega" drzewo sk³adniowe od liœci do
+# wierzcho³ka,
+# wariant backward - w ramach regu³y ³añcuchowej ró¿niczkowania, procedura "przebiega" drzewo sk³adniowe od wierzcho³ka
+# do liœci,
+# literatura: Rall L.B., Automatic Differentiation: Techniques and Applications,
+
 ?expression  # klasa "expression" s³u¿y do przechowywania wyra¿eñ
-library(Deriv) 
-# Deriv::Deriv
-# Deriv::Simplify
 
+# Wyra¿enia matematyczne zapisane w formie drzew sk³adniowych R
+# substitute - zwraca wierdzcho³ki drzewa sk³adniowego dla wyra¿enia (expression)
+e1 <- substitute(a+2*b)
+length(e1)
+typeof(e1)      # typ languange
+e1
+# Wierzcho³ki drzewa sk³adniowego od korzenia do liœci
+e1[[1]]         # "+"
+e1[[2]]         # symbol "a"
+e1[[3]]
+typeof(e1[[3]]) # typ language
+e1[[3]][[1]]    # "*"
+e1[[3]][[2]]    # symbol "2"
+e1[[3]][[3]]    # symbol "b"
 
 # D(expr, name) - Ró¿niczkowanie symoliczne - pakiet base
 # symboliczne ró¿niczkowanie funkcji jednej zmiennej (na wejœciu obiekt "expression",
@@ -530,9 +570,11 @@ attr(dxy(x = c(8,5,10), y = c(3, 7 , 8)), "hessian")  # zwraca wartoœæ drugiej p
 # Ró¿niczkowanie symboliczne - pakiet Deriv
 # Symboliczne wyznaczanie pochodnych funkcji wielu zmiennych (na wejœciu podaje siê obiekt "function")
 # Okreœlamy skalarn¹ funkcjê wielu zmiennych, w tym przypadku dwóch zmiennych:
-# f(x1, x2) = 100 * (x2 - x1 * x1)^2 + (1-x1)^2 (Rosenbrock Banana function)
+# f(x1, x2) = 100 * (x2 - x1 * x1)^2 + (1-x1)^2 (Funkcja Rosenbrocka - minimum globalne dla (x1,x2) = (1, 1))
 
 library(Deriv)
+# Deriv::Deriv
+# Deriv::Simplify
 
 fnc <- function(x) {
   100 * (x[2] - x[1] * x[1])^2 + (1 - x[1])^2
@@ -629,17 +671,21 @@ obs <- rnorm(100, 150, 4) # 100 obserwacji pseudolosowych z rozk³adu normalnego 
 library(fitdistrplus)
 ?fitdistrplus::fitdist
 
-# Implementacja popularnych metod numerycznych - pakiet pracma (Practical Numerical Math Functions)
-library(pracma)
-help(package = "pracma")
+
 
 ######################################################################################################################
 ######################################################################################################################
 ######################################################################################################################
 
-# Ca³kowanie numeryczne (jednowymiarowe) - metoda adaptacyjnych kwadratur Newtona-Cotesa
-# metoda trapezów: \sum_i=1^n (x_i- x_i-1)/2 (f(x_i-1) + f(x_i))
-# adaptacyjny dobór punktów x_i, tworz¹cych podzia³ przedzia³u ca³kowania [a, b]
+# Ca³kowanie numeryczne (jednowymiarowe) - metody kwadratur
+
+# np. metoda Newtona-Cotesa: w tym metoda trapezów: \sum_i=1^n (x_i- x_i-1)/2 (f(x_i-1) + f(x_i))
+
+# W R zaimplementowano natomiast adaptacyjne metody kwadratur:
+# https://en.wikipedia.org/wiki/Adaptive_quadrature
+# Wykorzystuje siê metodê Gaussa–Kronroda z biblioteki Fortrana QUADPACK:
+# https://en.wikipedia.org/wiki/QUADPACK
+
 # funkcja integrate wykorzystuje procedury dqags oraz dqagi z biblioteki QUADPACK
 ftointegr <- function(x) exp(x^2+5)
 curve(ftointegr, from = 0, to = 3, n = 1000, col = "red", ylab = "f(x)", main =  expression(paste("f(x)=", exp(x^2+5))))

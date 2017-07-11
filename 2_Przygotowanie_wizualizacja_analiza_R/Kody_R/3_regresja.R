@@ -518,7 +518,7 @@ Xw1 <- arepsmod$X
 # Macierz kowariancji estymatora EUMNK: cov(hatbeta) = se_(hat Omega)^2 * (X' (hat Omega)^{-1} X)^{-1}
 (fgls_cov_beta <- se2_fgls * solve(t(Xw1)%*% Omegainv %*% Xw1))
 coeftest(fgls_ar, vcov = fgls_cov_beta)
-confint(fgls_ar, level = 0.95) #??
+confint(fgls_ar, level = 0.95) # ?
 
 # Sprawdzenie wyników estymacji EUMNK za pomoc¹ w³asnej procedury: betahat_Omega = (X' (hat Omega)^{-1} X)^{-1} ((X' (hat Omega)^{-1} y)
 y <- arepsmod$y

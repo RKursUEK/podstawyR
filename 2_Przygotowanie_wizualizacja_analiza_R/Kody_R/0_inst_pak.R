@@ -171,22 +171,70 @@ lapply(10^(1:5), simestdist, dist = rnorm, nrep = 1000, estimators = c(mean, med
 
 par(mfrow = c(1,1)) # jeden wykres na okno
 
+############################################################################################################
+
+?Distributions   # rozk³ady zaimplementowane w pakiecie stats (d - funkcja gêstoœci, p - dystrybuanta,
+                 # q - funkcja kwantylowa, r - generowanie liczb pseudolosowych)
+# Wykaz rozk³adów w pakietach R - CRAN Task View - Distributions:
+# https://cran.r-project.org/web/views/Distributions.html
+
+# Uproszczona wersja rejection sampling
+# f - target density, g - proposal density, 
+# for all x: f(x) > 0 => g(x) > 0,
+# for all x in supp: f(x) <= M * g(x)
+
+rejectsampl <- function(n = 10000, targetDist = "beta", proposDist = "unif", M, 
+                        parsTarget = list(shape1 = 3, shape2 = 6), parsProp = list(), histBreaks = "Sturges"){
+  
+  rpropos <- paste(c("r", proposDist), collapse = "")
+  dtarget <- paste(c("d", targetDist), collapse = "")
+  dpropos <- paste(c("d", proposDist), collapse = "")
+  x <- do.call(rpropos, c(n = n, parsProp))
+  f <- do.call(dtarget, append(list(x = x), parsTarget))
+  g <- do.call(dpropos, append(list(x = x), parsProp))
+  
+  
+  if(proposDist == "unif") {M <- max(f)
+  if(length(parsProp)) M <- M * (parsProp$max - parsProp$min)
+  }
+  fMg <- f/(M*g)
+  if(!all(fMg <= 1)) stop("M and proposal distribution wrongly specified")
+  un <- runif(n)
+  accept <- fMg > un
+  sample <- x[accept]
+  nAccept <- sum(accept)
+  fracAccepted <- nAccept/n*100
+  minx <- min(x)
+  maxx <- max(x)
+  hist(sample, main = paste("Rejection sampling - target: ", targetDist, ", proposal:", proposDist, sep =""), 
+       freq = FALSE, col = "green", breaks = histBreaks)
+  xseq <- seq(from = minx, to = maxx, length.out= 10000)
+  lines(xseq, do.call(dtarget, append(list(x = xseq), parsTarget)), col = "red", lwd = 2)
+  list(sample = sample, nAccepted = nAccept, nGen = n, fracAccepted = fracAccepted)
+}
+
+rejectsampl()
+
+
 
 #############################################################################################################
 #############################################################################################################
 #############################################################################################################
 
-# Wyra¿enia matematyczne wyra¿one w formie drzew sk³adniowych R
-# substitute - zwraca drzewo sk³adniowe dla wyra¿enia (expression)
+# Wyra¿enia matematyczne zapisane w formie drzew sk³adniowych R
+# substitute - zwraca wierdzcho³ki drzewa sk³adniowego dla wyra¿enia (expression)
 e1 <- substitute(a+2*b)
 length(e1)
 typeof(e1)      # typ languange
-e1            
+e1
+# Wierzcho³ki drzewa sk³adniowego od korzenia do liœci
 e1[[1]]         # "+"
 e1[[2]]         # symbol "a"
-e1[[3]]       
+e1[[3]]
 typeof(e1[[3]]) # typ language
 e1[[3]][[1]]    # "*"
+e1[[3]][[2]]    # symbol "2"
+e1[[3]][[3]]    # symbol "b"
 
 ##############################################################################################################
 ##############################################################################################################

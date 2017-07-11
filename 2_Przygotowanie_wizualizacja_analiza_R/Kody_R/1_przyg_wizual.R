@@ -15,7 +15,7 @@ dim(wig20)
 names(wig20)
 library(xts)
 (wig20xts <- xts(wig20[,-c(1,6)], order.by = as.POSIXct(wig20[,1])))
-lw20 <- log(wig20xts[, -5])
+lw20 <- log(wig20xts)
 head(lw20)
 plot(lw20[, "Zamkniecie"], main = "Log closing prices time series of WIG20", xlab = "Time")
 
@@ -67,18 +67,36 @@ library(rugarch)
 # plot(fit, which = "ask")
 plot(fit, which = "all")
 
-# Bootstrapowe przedzia³y predykcji dla ARMA-GARCH (Pascual et al. 2004, 2006); 
-# method = c("Partial", "Full"), "Full" - bierze pod uwagê tak¿e niepewnoœæ zwi¹zan¹ 
-# z oszacowaniami parametrów, "Partial" - bierze pod uwagê wy³¹cznie niepewnoœæ wynikaj¹c¹ z rozk³adu warunkowego
-bootp <- ugarchboot(fit, method = "Full", n.ahead = 50, n.bootpred = 100, n.bootfit = 100, verbose = TRUE)
+# Bootstrapowe przedzia³y predykcji dla ARMA-GARCH (Pascual et al. 2004, 2006) - ugarchboot;
+# bootstrapowe próby dla standaryzowanych reszt modelu ARMA-GARCH 
+# (nie bierze siê pod uwagê przyjêtego typu rozk³adu innowacji)
+# method = c("Partial", "Full"): 
+# "Full" - ma na celu uwzglêdnienie niepewnoœci zwi¹zanej z oszacowaniami parametrów modelu ARMA-GARCH oraz zmiennoœci
+# sk³adników losowych - innowacji procesu:
+# (szacuje siê parametry wyspecyfikowanego modelu, dla szeregów y_t(b), t = 1, ..., T, które uzyskuje siê 
+# przy oszacowanych wartoœciach parametrów dla zaobserwowanej próby, zastêpuj¹c reszty standaryzowane
+# ich realizacjami bootstrapowymi; wykorzystuj¹c oszacowania parametrów modelu dla ka¿dej kolejnej próby 
+# y_t(b), b = 1, ..., n.bootpred, dla przysz³ych momentów T+1, ..., T+n.ahead, wyznacza siê wartoœci prognozy 
+# wariancji oraz y_t, wykorzystuj¹c przy tym bootstrapowe realizacje standaryzowanych reszt - liczba
+# bootstrapowych standaryzowanych reszt wynosi n.bootpred, tym samym dla ka¿dego momentu czasowego t= T+1,...,T+n.ahead
+# mamy n.bootfit * n.bootpred relizacji z bootstrapowego predyktywnego rozk³adu
 
+# "Partial" - nie uwzglêdnia niepewnoœci zwi¹zanej z oszacowaniami parametrów, dla momentów t = T+1,...,T+n.ahead,
+# przy generowaniu realizacji wariancji oraz y_t wykorzystuje siê, wy³¹cznie oszacowania parametrów dla zaobserwowanej 
+# próby oraz bootstrapowe realizacje standaryzowanych reszt, dla ka¿dego momentu uzyskujemy n.bootpred 
+# prognoz wariancji oraz wartoœci y_t
+
+(bootp <- ugarchboot(fit, method = "Full", n.ahead = 50, n.bootpred = 100, n.bootfit = 100, verbose = TRUE))
+slotNames(bootp)
+
+# Realizacje (symulacje) y_t, t = T+1, ..., T+n.ahead z bootstrapowego rozk³adu predyktywnego
 slotNames(bootp)
 (forboot <- bootp@fseries)
-dim(forboot)
+dim(forboot) # (n.bootfit * n.bootpred) x n.ahead = (100 * 100) x 50
 
-# Bootstrap for sigma^2
+# Bootstrap dla sigma^2
 (fsig <- bootp@fsigma)
-dim(fsig)
+dim(fsig) # (n.bootfit * n.bootpred) x n.ahead = (100 * 100) x 50
 
 # Wykres wachlarzowy
 library(fanplot)
@@ -409,7 +427,7 @@ select(datawoj, matches(".16"))
 
 # tidyr - pakiet do czyszczenia danych, dla danych panelowych - zamiana postaci "szerokiej" na "w¹sk¹" i odwrotnie
 library(tidyr) 
-help(package = "dplyr") # Wyszczególnienie funkcji pakietu
+help(package = "tidyr") # Wyszczególnienie funkcji pakietu
 
 # Przejœcie do postaci "w¹skiej" dla zmiennej wse.abs
 wse <- gather(datawoj, key = year, value = wse.abs, wse.abs.1999:wse.abs.2016)
